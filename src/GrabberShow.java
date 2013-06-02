@@ -50,7 +50,7 @@ public class GrabberShow implements Runnable
         
     }
     
-    @Override
+   
     public void run() {
       
     	IplImage[] img1 = new IplImage[cams.length];
@@ -128,7 +128,7 @@ public class GrabberShow implements Runnable
             for(int i=0; i<cams.length; i++) {
             	grabber[i].stop();
             }
-            
+             
         } catch (Exception e) {
         }
     	
