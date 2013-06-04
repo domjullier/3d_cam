@@ -1,4 +1,5 @@
 
+
 import com.googlecode.javacv.FrameGrabber;
 import static com.googlecode.javacv.cpp.opencv_core.*;
 import com.googlecode.javacv.cpp.opencv_core.CvScalar;
@@ -12,6 +13,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.border.LineBorder;
+import javax.swing.text.View;
 import javax.swing.JTextField;
 
 
@@ -22,6 +24,7 @@ public class MainWindow {
 	JLabel lblwebcam;
 	JLabel lblwebcam2;
 	Thread thCam1;
+	Thread thView;
 	//public CvPoint origin = new CvPoint();
 	CvRect[] selection = new CvRect[2];
 	//CvRect track_window = new CvRect();
@@ -35,7 +38,14 @@ public class MainWindow {
 	private JLabel lblCam_1;
 	private JTextField text_cam1;
 	private JTextField text_cam2;
-	    
+	View3D view;
+	int x, y, z;    
+	
+	public int[] getPosition()
+	{	
+		return new int[]{x,y,z};
+	}
+	
 	public int getTrackObject(int id) {
 		return trackObject[id];
 	}
@@ -77,8 +87,14 @@ public class MainWindow {
 	
 	private void startWebcam() {
 		GrabberShow gs = new GrabberShow(this, new int[]{0,1});
+		View3D view = new View3D(this);
+		
+		//view.initialize();
+		
+		thView = new Thread(view);
 		thCam1 = new Thread(gs);
 		thCam1.start();
+		thView.start();
 	}
 	
 	/*
@@ -92,12 +108,16 @@ public class MainWindow {
 	{
 		
 		if(id==0)
-		{
+		{	
+			this.x=x;
+			this.z=y;
 			lblwebcam.setIcon(new ImageIcon(newFrame.getBufferedImage() ));
 			text_cam1.setText(Integer.toString(x) + '/' + Integer.toString(y));
 		}
 		if(id==1)
 		{
+			this.y=y;
+			//view.setNewPosition(x, y, z);
 			lblwebcam2.setIcon(new ImageIcon(newFrame.getBufferedImage() ));
 			text_cam2.setText(Integer.toString(x) + '/' + Integer.toString(y));
 		}

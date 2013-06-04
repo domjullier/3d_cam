@@ -18,8 +18,9 @@ import static javax.media.opengl.GL.*;  // GL constants
 import static javax.media.opengl.GL2.*; // GL2 constants
 
 
+
 @SuppressWarnings("serial")
-public class View3D implements GLEventListener, KeyListener {
+public class View3D implements GLEventListener, KeyListener, Runnable {
    // Define constants for the top-level container
    private static String TITLE = "NeHe Lesson #6: Texture";
    private static final int CANVAS_WIDTH = 320;  // width of the drawable
@@ -27,10 +28,18 @@ public class View3D implements GLEventListener, KeyListener {
    private static final int FPS = 60; // animator's target frames per second
    private float posX = 0;
    private float posY = -5;
+
+   
+   MainWindow detectMainref;
+   
+   public View3D(MainWindow detectMainref)
+   {
+	   this.detectMainref=detectMainref;
+   }
    
    /** The entry main() method to setup the top-level container and animator */
    public static void main(String[] args) {
-   
+   /*
             GLCanvas canvas = new GLCanvas();
             canvas.setPreferredSize(new Dimension(CANVAS_WIDTH, CANVAS_HEIGHT));
             View3D renderer = new View3D();
@@ -64,6 +73,54 @@ public class View3D implements GLEventListener, KeyListener {
             frame.pack();
             frame.setVisible(true);
             animator.start(); // start the animation loop
+            */
+   }
+   
+   public void initialize()
+   {
+	   GLCanvas canvas = new GLCanvas();
+       canvas.setPreferredSize(new Dimension(CANVAS_WIDTH, CANVAS_HEIGHT));
+       View3D renderer = new View3D(detectMainref);
+       canvas.addGLEventListener(renderer);             
+       canvas.addKeyListener(renderer);         
+       canvas.setFocusable(true);
+       canvas.requestFocus();
+
+       // Create a animator that drives canvas' display() at the specified FPS. 
+       final FPSAnimator animator = new FPSAnimator(canvas, FPS, true);
+       
+       // Create the top-level container
+       final JFrame frame = new JFrame(); // Swing's JFrame or AWT's Frame
+       frame.getContentPane().add(canvas);
+       
+       frame.addWindowListener(new WindowAdapter() {
+          @Override 
+          public void windowClosing(WindowEvent e) {
+             // Use a dedicate thread to run the stop() to ensure that the
+             // animator stops before program exits.
+             new Thread() {
+                @Override 
+                public void run() {
+                   if (animator.isStarted()) animator.stop();
+                   System.exit(0);
+                }
+             }.start();
+          }
+       });
+       frame.setTitle(TITLE);
+       frame.pack();
+       frame.setVisible(true);
+       animator.start(); // start the animation loop  
+	 
+   }
+   
+   public void setNewPosition(int x, int y, int z)
+   {
+	   System.out.println(x + " " + y + "" + z);
+	   //x: 0 do 640
+	   //y: 0 do 640
+	   //z: 0 do 480
+   
    }
    
    // Setup OpenGL Graphics Renderer
@@ -278,6 +335,10 @@ public void keyPressed(KeyEvent e) {
 	 		this.posY-=0.1f;
 	 		break;
 	 }
+	 
+	 int[] result = detectMainref.getPosition();
+	 
+	 System.out.println( result[0] + " " + result[1] + " "  + result[2]); 
 	
 }
 
@@ -288,6 +349,12 @@ public void keyReleased(KeyEvent e) {
 
 public void keyTyped(KeyEvent e) {
 	// TODO Auto-generated method stub
+	
+}
+
+@Override
+public void run() {
+	initialize();
 	
 }
    
