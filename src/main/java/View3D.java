@@ -2,12 +2,16 @@ import java.awt.*;
 import java.awt.event.*;
 import java.io.IOException;
 import javax.swing.*;
+import javax.media.opengl.GL;
 import javax.media.opengl.GL2;
+import javax.media.opengl.GL2GL3;
 import javax.media.opengl.GLAutoDrawable;
 import javax.media.opengl.GLEventListener;
 import javax.media.opengl.GLException;
 import javax.media.opengl.awt.GLCanvas;
 import javax.media.opengl.glu.GLU;
+import javax.media.opengl.glu.GLUquadric;
+
 import com.jogamp.opengl.util.FPSAnimator;
 import com.jogamp.opengl.util.texture.Texture;
 import com.jogamp.opengl.util.texture.TextureCoords;
@@ -21,59 +25,27 @@ import static javax.media.opengl.GL2.*; // GL2 constants
 
 @SuppressWarnings("serial")
 public class View3D implements GLEventListener, KeyListener, Runnable {
-   // Define constants for the top-level container
-   private static String TITLE = "NeHe Lesson #6: Texture";
+   private static String TITLE = "ddddddddd";
    private static final int CANVAS_WIDTH = 320;  // width of the drawable
    private static final int CANVAS_HEIGHT = 240; // height of the drawable
    private static final int FPS = 60; // animator's target frames per second
-   private float posX = 0;
-   private float posY = -5;
-
+   private float posX = 2.5f;
+   private float posY = 0.0f;  
+   private GLUquadric qobj0;   
+   MainWindow detectMainref;  
+   private GLU glu;  
+   // Texture
+   private Texture texture;
+   private Texture ballTexture;
+   private String textureFileName = "images/glass.png";
+   private String textureFileType = ".png";
    
-   MainWindow detectMainref;
+   private float textureTop, textureBottom, textureLeft, textureRight;
+   
    
    public View3D(MainWindow detectMainref)
    {
 	   this.detectMainref=detectMainref;
-   }
-   
-   /** The entry main() method to setup the top-level container and animator */
-   public static void main(String[] args) {
-   /*
-            GLCanvas canvas = new GLCanvas();
-            canvas.setPreferredSize(new Dimension(CANVAS_WIDTH, CANVAS_HEIGHT));
-            View3D renderer = new View3D();
-            canvas.addGLEventListener(renderer);             
-            canvas.addKeyListener(renderer);         
-            canvas.setFocusable(true);
-            canvas.requestFocus();
-
-            // Create a animator that drives canvas' display() at the specified FPS. 
-            final FPSAnimator animator = new FPSAnimator(canvas, FPS, true);
-            
-            // Create the top-level container
-            final JFrame frame = new JFrame(); // Swing's JFrame or AWT's Frame
-            frame.getContentPane().add(canvas);
-            
-            frame.addWindowListener(new WindowAdapter() {
-               @Override 
-               public void windowClosing(WindowEvent e) {
-                  // Use a dedicate thread to run the stop() to ensure that the
-                  // animator stops before program exits.
-                  new Thread() {
-                     @Override 
-                     public void run() {
-                        if (animator.isStarted()) animator.stop();
-                        System.exit(0);
-                     }
-                  }.start();
-               }
-            });
-            frame.setTitle(TITLE);
-            frame.pack();
-            frame.setVisible(true);
-            animator.start(); // start the animation loop
-            */
    }
    
    public void initialize()
@@ -123,52 +95,31 @@ public class View3D implements GLEventListener, KeyListener, Runnable {
    
    }
    
-   // Setup OpenGL Graphics Renderer
-   
-   private GLU glu;  // for the GL Utility
-   // Rotational angle about the x, y and z axes in degrees
-   private static float angleX = 0.0f;
-   private static float angleY = 0.0f;
-   private static float angleZ = 0.0f;
-   // Rotational speed about x, y, z axes in degrees per refresh
-   private static float rotateSpeedX = 0.3f;
-   private static float rotateSpeedY = 0.2f;
-   private static float rotateSpeedZ = 0.4f;
 
-   // Texture
-   private Texture texture;
-   private String textureFileName = "images/nehe.png";
-   private String textureFileType = ".png";
-
-   // Texture image flips vertically. Shall use TextureCoords class to retrieve the
-   // top, bottom, left and right coordinates.
-   private float textureTop, textureBottom, textureLeft, textureRight;
-
-   
-   // ------ Implement methods declared in GLEventListener ------
-
-   /**
-    * Called back immediately after the OpenGL context is initialized. Can be used 
-    * to perform one-time initialization. Run only once.
-    */
-   
    public void init(GLAutoDrawable drawable) {
       GL2 gl = drawable.getGL().getGL2();      // get the OpenGL graphics context
       glu = new GLU();                         // get GL Utilities
       gl.glClearColor(0.0f, 0.0f, 0.0f, 0.0f); // set background (clear) color
       gl.glClearDepth(1.0f);      // set clear depth value to farthest
       gl.glEnable(GL_DEPTH_TEST); // enables depth testing
-      gl.glDepthFunc(GL_LEQUAL);  // the type of depth test to do
-      gl.glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST); // best perspective correction
-      gl.glShadeModel(GL_SMOOTH); // blends colors nicely, and smoothes out lighting
+      
+      qobj0 = glu.gluNewQuadric();
+      glu.gluQuadricDrawStyle( qobj0, GLU.GLU_FILL );
+      glu.gluQuadricNormals( qobj0, GLU.GLU_SMOOTH );
+      glu.gluQuadricTexture(qobj0,true);
+
 
       // Load texture from image
       try {
          // Create a OpenGL Texture object from (URL, mipmap, file suffix)
          // Use URL so that can read from JAR and disk file.
          texture = TextureIO.newTexture(
-               getClass().getClassLoader().getResource(textureFileName), // relative to project root 
-               false, textureFileType);
+               getClass().getClassLoader().getResource("images/glass.png"),
+               false, ".png");
+         
+         ballTexture = TextureIO.newTexture(
+                 getClass().getClassLoader().getResource("images/crate.png"), // relative to project root 
+                 false,".png");
 
          // Use linear filter for texture if image is larger than the original texture
          gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -220,94 +171,74 @@ public class View3D implements GLEventListener, KeyListener, Runnable {
     */
    
    public void display(GLAutoDrawable drawable) {
+	   
+	   
+	  // detectMainref.getPosition();
+	   
       GL2 gl = drawable.getGL().getGL2();  // get the OpenGL 2 graphics context
       gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear color and depth buffers
 
       // ------ Render a Cube with texture ------
       gl.glLoadIdentity();  // reset the model-view matrix
-      glu.gluLookAt(posX, posY,0,posX,posY + 2,0,0,0,1);
+      glu.gluLookAt(posX, posY,1,posX,posY + 2,1,0,0,1);
       
-
-
-      // Enables this texture's target in the current GL context's state.
+       
       texture.enable(gl);  // same as gl.glEnable(texture.getTarget());
-      // gl.glTexEnvi(GL.GL_TEXTURE_ENV, GL.GL_TEXTURE_ENV_MODE, GL.GL_REPLACE);
-      // Binds this texture to the current GL context.
-      texture.bind(gl);  // same as gl.glBindTexture(texture.getTarget(), texture.getTextureObject());
- 
-      gl.glBegin(GL_QUADS);
 
-      // Front Face
+      texture.bind(gl);  
+     
+     gl.glBegin(GL_QUADS);
+   //   gl.glPolygonMode(gl.GL_FRONT_AND_BACK,gl.GL_FILL);
       gl.glTexCoord2f(textureLeft, textureBottom);
-      gl.glVertex3f(-1.0f, -1.0f, 1.0f); // bottom-left of the texture and quad
-      gl.glTexCoord2f(textureRight, textureBottom);
-      gl.glVertex3f(1.0f, -1.0f, 1.0f);  // bottom-right of the texture and quad
+      gl.glVertex3f(0.0f, 0.0f, 0.0f);
+      gl.glTexCoord2f(textureRight,textureBottom);
+      gl.glVertex3f(5.0f, 0.0f, 0.0f);
       gl.glTexCoord2f(textureRight, textureTop);
-      gl.glVertex3f(1.0f, 1.0f, 1.0f);   // top-right of the texture and quad
-      gl.glTexCoord2f(textureLeft, textureTop);
-      gl.glVertex3f(-1.0f, 1.0f, 1.0f);  // top-left of the texture and quad
-
-      // Back Face
-      gl.glTexCoord2f(textureRight, textureBottom);
-      gl.glVertex3f(-1.0f, -1.0f, -1.0f);
-      gl.glTexCoord2f(textureRight, textureTop);
-      gl.glVertex3f(-1.0f, 1.0f, -1.0f);
-      gl.glTexCoord2f(textureLeft, textureTop);
-      gl.glVertex3f(1.0f, 1.0f, -1.0f);
-      gl.glTexCoord2f(textureLeft, textureBottom);
-      gl.glVertex3f(1.0f, -1.0f, -1.0f);
+      gl.glVertex3f(5.0f, 5.0f, 0.0f);
+      gl.glTexCoord2f(textureLeft,textureTop);
+      gl.glVertex3f(0.0f, 5.0f, 0.0f);
       
-      // Top Face
-      gl.glTexCoord2f(textureLeft, textureTop);
-      gl.glVertex3f(-1.0f, 1.0f, -1.0f);
-      gl.glTexCoord2f(textureLeft, textureBottom);
-      gl.glVertex3f(-1.0f, 1.0f, 1.0f);
-      gl.glTexCoord2f(textureRight, textureBottom);
-      gl.glVertex3f(1.0f, 1.0f, 1.0f);
-      gl.glTexCoord2f(textureRight, textureTop);
-      gl.glVertex3f(1.0f, 1.0f, -1.0f);
-      
-      // Bottom Face
-      gl.glTexCoord2f(textureRight, textureTop);
-      gl.glVertex3f(-1.0f, -1.0f, -1.0f);
-      gl.glTexCoord2f(textureLeft, textureTop);
-      gl.glVertex3f(1.0f, -1.0f, -1.0f);
-      gl.glTexCoord2f(textureLeft, textureBottom);
-      gl.glVertex3f(1.0f, -1.0f, 1.0f);
-      gl.glTexCoord2f(textureRight, textureBottom);
-      gl.glVertex3f(-1.0f, -1.0f, 1.0f);
-      
-      // Right face
-      gl.glTexCoord2f(textureRight, textureBottom);
-      gl.glVertex3f(1.0f, -1.0f, -1.0f);
-      gl.glTexCoord2f(textureRight, textureTop);
-      gl.glVertex3f(1.0f, 1.0f, -1.0f);
-      gl.glTexCoord2f(textureLeft, textureTop);
-      gl.glVertex3f(1.0f, 1.0f, 1.0f);
-      gl.glTexCoord2f(textureLeft, textureBottom);
-      gl.glVertex3f(1.0f, -1.0f, 1.0f);
-      
-      // Left Face
-      gl.glTexCoord2f(textureLeft, textureBottom);
-      gl.glVertex3f(-1.0f, -1.0f, -1.0f);
-      gl.glTexCoord2f(textureRight, textureBottom);
-      gl.glVertex3f(-1.0f, -1.0f, 1.0f);
-      gl.glTexCoord2f(textureRight, textureTop);
-      gl.glVertex3f(-1.0f, 1.0f, 1.0f);
-      gl.glTexCoord2f(textureLeft, textureTop);
-      gl.glVertex3f(-1.0f, 1.0f, -1.0f);
-
+     // gl.glPolygonMode(gl.GL_FRONT_AND_BACK,gl.GL_LINES);     
       gl.glEnd();
-
-      // Disables this texture's target (e.g., GL_TEXTURE_2D) in the current GL
-      // context's state.
-      //texture.disable(gl);  // same as gl.glDisable(texture.getTarget());
-
-      // Update the rotational angel after each refresh by the corresponding
-      // rotational speed
-      angleX += rotateSpeedX;
-      angleY += rotateSpeedY;
-      angleZ += rotateSpeedZ;
+      
+      gl.glPushMatrix();
+      ballTexture.bind(gl);
+      gl.glTranslatef(2.5f, 2.5f,1.0f);
+      glu.gluSphere( qobj0, 0.08f, 10, 10);
+      gl.glPopMatrix();
+      
+      texture.disable(gl);
+      
+      
+      gl.glBegin(GL_LINES);
+      gl.glPolygonMode(GL.GL_FRONT_AND_BACK,GLU.GLU_LINE);  
+      gl.glLineWidth(5.0f);
+      gl.glVertex3f(0.0f, 0.0f, 0.0f);
+      gl.glVertex3f(0.0f, 0.0f, 5.0f);
+      
+      gl.glVertex3f(0.0f, 0.0f, 5.0f);
+      gl.glVertex3f(5.0f, 0.0f, 5.0f);
+      
+      gl.glVertex3f(5.0f, 0.0f, 5.0f);
+      gl.glVertex3f(5.0f, 0.0f, 0.0f);
+      //----------------------
+      gl.glVertex3f(0.0f, 5.0f, 0.0f);
+      gl.glVertex3f(0.0f, 5.0f, 5.0f);
+      
+      gl.glVertex3f(0.0f, 5.0f, 5.0f);
+      gl.glVertex3f(5.0f, 5.0f, 5.0f);
+      
+      gl.glVertex3f(5.0f, 5.0f, 5.0f);
+      gl.glVertex3f(5.0f, 5.0f, 0.0f);
+      //----------------------
+      gl.glVertex3f(0.0f, 0.0f, 5.0f);
+      gl.glVertex3f(0.0f, 5.0f, 5.0f);
+      
+      gl.glVertex3f(5.0f, 0.0f, 5.0f);
+      gl.glVertex3f(5.0f, 5.0f, 5.0f);
+         
+      gl.glEnd();
+      
    }
 
    /** 
@@ -320,19 +251,23 @@ public void keyPressed(KeyEvent e) {
 	 switch (e.getKeyCode()) {
 	 	case VK_LEFT:  
 	 		System.out.println(posX+":"+posY);
-	 		this.posX-=0.1f;
+	 		if(this.posX>=0.0f)
+	 			this.posX-=0.1f;
 	 		break;
 	 	case VK_RIGHT: 
 	 		System.out.println(posX+":"+posY);
-	 		this.posX+=0.1f;
+	 		if(this.posX<=5.0f)
+	 			this.posX+=0.1f;
 	 		break;
 	 	case VK_UP:
 	 		System.out.println(posX+":"+posY);
-	 		this.posY+=0.1f;
+	 		if(this.posY<=5.0f)
+	 			this.posY+=0.1f;
 	 		break;
 	 	case VK_DOWN:
 	 		System.out.println(posX+":"+posY);
-	 		this.posY-=0.1f;
+	 		if(this.posY>=0.0f)
+	 			this.posY-=0.1f;
 	 		break;
 	 }
 	 
@@ -352,10 +287,9 @@ public void keyTyped(KeyEvent e) {
 	
 }
 
-@Override
+
 public void run() {
-	initialize();
-	
+	initialize();	
 }
    
    
