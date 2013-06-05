@@ -114,9 +114,15 @@ public class GrabberShow implements Runnable
 		            
 		        	camshift_tracking(img1[i], img2[i], detectMainref.getSelection(i), i);
 		        	
-		        	System.out.println("CAM" + i + ": " + tracking_window[i].x() + " " + tracking_window[i].y());
+		        	//System.out.println("CAM" + i + ": " + tracking_window[i].x() + " " + tracking_window[i].y());
 		        	
-		        	detectMainref.newFrame(img1[i], i, tracking_window[i].x(), tracking_window[i].y());
+		        	
+		        	int x = tracking_window[i].x()+(tracking_window[i].width()/2);
+		        	int y = tracking_window[i].y()+(tracking_window[i].height()/2);
+		        	
+		        	detectMainref.newFrame(img1[i], i, x, y);
+		        	
+		        	
 		        	
 		        	img2[i]=img1[i];
 		        	

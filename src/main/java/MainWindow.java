@@ -43,7 +43,7 @@ public class MainWindow {
 	
 	public int[] getPosition()
 	{	
-		return new int[]{x,y,z};
+		return new int[]{x,640-y,480-z};
 	}
 	
 	public int getTrackObject(int id) {
@@ -116,7 +116,7 @@ public class MainWindow {
 		}
 		if(id==1)
 		{
-			this.y=y;
+			this.y=x;
 			//view.setNewPosition(x, y, z);
 			lblwebcam2.setIcon(new ImageIcon(newFrame.getBufferedImage() ));
 			text_cam2.setText(Integer.toString(x) + '/' + Integer.toString(y));

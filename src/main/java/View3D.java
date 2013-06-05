@@ -1,6 +1,8 @@
 import java.awt.*;
 import java.awt.event.*;
 import java.io.IOException;
+import java.util.Random;
+
 import javax.swing.*;
 import javax.media.opengl.GL;
 import javax.media.opengl.GL2;
@@ -30,15 +32,28 @@ public class View3D implements GLEventListener, KeyListener, Runnable {
    private static final int CANVAS_HEIGHT = 240; // height of the drawable
    private static final int FPS = 60; // animator's target frames per second
    private float posX = 2.5f;
-   private float posY = 0.0f;  
+   private float posY = -1.5f; 
+   private float posZ = 2.0f;
+   
+   private float ballX = 2.5f;
+   private float ballY = 0.0f; 
+   private float ballZ = 0.0f;
+   
+   private float randX = 2.5f;
+   private float randY = 2.5f; 
+   private float randZ = 2.5f;
+   
+   private Random rand = new Random();
+   
+   
+   
    private GLUquadric qobj0;   
    MainWindow detectMainref;  
    private GLU glu;  
    // Texture
    private Texture texture;
    private Texture ballTexture;
-   private String textureFileName = "images/glass.png";
-   private String textureFileType = ".png";
+   private Texture randomBallTexture;
    
    private float textureTop, textureBottom, textureLeft, textureRight;
    
@@ -118,8 +133,12 @@ public class View3D implements GLEventListener, KeyListener, Runnable {
                false, ".png");
          
          ballTexture = TextureIO.newTexture(
-                 getClass().getClassLoader().getResource("images/crate.png"), // relative to project root 
-                 false,".png");
+                 getClass().getClassLoader().getResource("images/cube.bmp"), // relative to project root 
+                 false,".bmp");
+         
+         randomBallTexture = TextureIO.newTexture(
+                 getClass().getClassLoader().getResource("images/ball.bmp"), // relative to project root 
+                 false,".bmp");
 
          // Use linear filter for texture if image is larger than the original texture
          gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -173,7 +192,31 @@ public class View3D implements GLEventListener, KeyListener, Runnable {
    public void display(GLAutoDrawable drawable) {
 	   
 	   
-	  // detectMainref.getPosition();
+	  int[] pos = detectMainref.getPosition();
+	  
+	  this.ballX =(float) (pos[0]/640.0)*5;
+	  this.ballY =(float) (pos[1]/640.0)*5;
+	  this.ballZ =(float) (pos[2]/480.0)*5;
+	 
+	  
+	  System.out.println("x: " + this.ballX + " " + "y: " + this.ballY + " " + "z: " + this.ballZ);
+	  
+	  float fact1= (this.ballX - this.randX)*(this.ballX - this.randX);
+	  float fact2= (this.ballY - this.randY)*(this.ballY - this.randY);
+	  float fact3= (this.ballZ - this.randZ)*(this.ballY - this.randY);
+	  
+	  
+	  
+	  if(Math.sqrt(fact1 + fact2 + fact3)<0.5){
+		  this.randX  =  rand.nextFloat() * 5.f; 
+		  this.randY  =  rand.nextFloat() * 5.f;
+		  this.randZ  =  rand.nextFloat() * 5.f;
+	  }
+		  
+	  
+	  //System.out.println("y: " + this.ballY); 
+	  //System.out.println("z: " + this.ballZ);
+	  
 	   
       GL2 gl = drawable.getGL().getGL2();  // get the OpenGL 2 graphics context
       gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear color and depth buffers
@@ -202,9 +245,15 @@ public class View3D implements GLEventListener, KeyListener, Runnable {
       gl.glEnd();
       
       gl.glPushMatrix();
-      ballTexture.bind(gl);
-      gl.glTranslatef(2.5f, 2.5f,1.0f);
-      glu.gluSphere( qobj0, 0.08f, 10, 10);
+      	ballTexture.bind(gl);
+      	gl.glTranslatef(this.ballX,this.ballY,this.ballZ);
+      	glu.gluSphere( qobj0, 0.4f, 10, 10);
+      gl.glPopMatrix();
+      
+      gl.glPushMatrix();
+        randomBallTexture.bind(gl);
+      	gl.glTranslatef(this.randX,this.randY,this.randZ);
+      	glu.gluSphere( qobj0, 0.4f, 10, 10);
       gl.glPopMatrix();
       
       texture.disable(gl);
@@ -251,24 +300,35 @@ public void keyPressed(KeyEvent e) {
 	 switch (e.getKeyCode()) {
 	 	case VK_LEFT:  
 	 		System.out.println(posX+":"+posY);
-	 		if(this.posX>=0.0f)
-	 			this.posX-=0.1f;
+	 	//	if(this.posX>=0.0f)
+	 			this.posX-=0.2f;
 	 		break;
 	 	case VK_RIGHT: 
 	 		System.out.println(posX+":"+posY);
-	 		if(this.posX<=5.0f)
-	 			this.posX+=0.1f;
+	 		//if(this.posX<=5.0f)
+	 			this.posX+=0.2f;
 	 		break;
 	 	case VK_UP:
 	 		System.out.println(posX+":"+posY);
-	 		if(this.posY<=5.0f)
-	 			this.posY+=0.1f;
+	 	//	if(this.posY<=5.0f)
+	 			this.posY+=0.2f;
 	 		break;
 	 	case VK_DOWN:
 	 		System.out.println(posX+":"+posY);
-	 		if(this.posY>=0.0f)
-	 			this.posY-=0.1f;
+	 	//	if(this.posY>=0.0f)
+	 			this.posY-=0.2f;
 	 		break;
+	 	
+	 	case 'I':
+	 		System.out.println(posX+":"+posY);
+	 			this.posZ+=0.2f;
+	 		break;
+	 		
+	 	case 'K':
+	 		System.out.println(posX+":"+posY);
+	 			this.posZ-=0.2f;
+	 		break;
+	 		
 	 }
 	 
 	 int[] result = detectMainref.getPosition();
